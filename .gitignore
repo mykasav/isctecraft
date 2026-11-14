@@ -1,0 +1,17 @@
+/.gradle/
+/.nb-gradle/
+/build/
+/private/
+/*.dll
+/*.dylib
+/*.so
+
+/.idea/
+
+local.properties
+*.iml
+.DS_Store
+__MACOSX/
+out/
+saves/
+*.log
