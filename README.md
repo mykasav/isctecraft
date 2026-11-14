@@ -45,7 +45,7 @@ Código feito com ajuda de IA tem de ser percebido e defendido por quem o submet
 
 | Nome | Número |
 |---|---|
-| Mykhaylo Savchyshkin | |
+| Mykhaylo Savchyshkin | 139718 | 
 | | |
 | | |
 | | |
