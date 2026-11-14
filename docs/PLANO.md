@@ -6,10 +6,10 @@
 
 | Pessoa | Horas/semana | Papel principal | Pilar que "defende" na discussão |
 |---|---|---|---|
-| Mykhaylo | 15 h | Arquitetura, alterações ao motor, NPCs/IA, waves, integração, revisão de PRs | D (NPCs) + E (geração) |
-| João Sarreira | 5 h | Blocos e terreno | A (blocos) |
-| Miguel Lima | 5 h | Itens, inventário, crafting e shop | B (objetos) + C (crafting) |
-| Duarte | 5 h | Save/Load, highscore, documentação final | F (persistência) |
+| Mykhaylo | | Arquitetura, alterações ao motor, NPCs/IA, waves, integração, revisão de PRs | D (NPCs) + E (geração) |
+| João Sarreira |  | Blocos e terreno | A (blocos) |
+| Miguel Lima | | Itens, inventário, crafting e shop | B (objetos) + C (crafting) |
+| Duarte |  | Save/Load, highscore, documentação final | F (persistência) |
 
 **Total: ~30 h/semana, ~150 h no projeto.** Não há folga para extras antes de o núcleo estar jogável.
 
