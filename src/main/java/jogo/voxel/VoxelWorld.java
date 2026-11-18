@@ -104,7 +104,7 @@ public class VoxelWorld {
     public void generateLayers() {
         //generate a SINGLE block under the player:
         Vector3i pos = new Vector3i(getRecommendedSpawn());
-        setBlock(pos.x, pos.y, pos.z, VoxelPalette.STONE_ID);
+        setBlock(pos.x, pos.y, pos.z, VoxelPalette.GRASS_ID);
     }
 
     public int getTopSolidY(int x, int z) {
