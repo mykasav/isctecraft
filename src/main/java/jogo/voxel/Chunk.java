@@ -9,8 +9,8 @@ import com.jme3.material.Material;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Mesh;
 import com.jme3.scene.Node;
-import jogo.framework.math.Vec3;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,66 +38,148 @@ public class Chunk {
     public Node getNode() { return node; }
     public byte get(int x, int y, int z) { return vox[x][y][z]; }
     public void set(int x, int y, int z, byte id) { vox[x][y][z] = id; }
-    public int getChunkX() { return chunkX; }
-    public int getChunkY() { return chunkY; }
-    public int getChunkZ() { return chunkZ; }
+
 
     public void markDirty() { dirty = true; }
     public boolean isDirty() { return dirty; }
     public void clearDirty() { dirty = false; }
 
     // Build and attach mesh for this chunk
+
     public void buildMesh(AssetManager assetManager, VoxelPalette palette) {
+
         long start = System.nanoTime();
+
         node.detachAllChildren();
-        Map<Byte, MeshBuilder> builders = new HashMap<>();
+
+        // Um conjunto de MeshBuilders por tipo de bloco.
+        // Dentro de cada conjunto existe um MeshBuilder por face.
+        Map<Byte, EnumMap<MeshBuilder.Face, MeshBuilder>> builders = new HashMap<>();
+
         for (int i = 0; i < palette.size(); i++) {
+
             if (i == VoxelPalette.AIR_ID) continue;
-            MeshBuilder mb = new MeshBuilder();
-            // Randomize UVs only for dirt to add variation without per-block materials
-            mb.setRandomizeUV(true);
-            builders.put((byte)i, mb);
+
+            byte id = (byte) i;
+
+            EnumMap<MeshBuilder.Face, MeshBuilder> faceBuilders =
+                    new EnumMap<>(MeshBuilder.Face.class);
+
+            for (MeshBuilder.Face face : MeshBuilder.Face.values()) {
+
+                MeshBuilder mb = new MeshBuilder();
+
+                // Randomize UVs apenas para o Dirt.
+                if (id == VoxelPalette.DIRT_ID) {
+                    mb.setRandomizeUV(true);
+                }
+
+                faceBuilders.put(face, mb);
+            }
+
+            builders.put(id, faceBuilders);
         }
-        // Track first block position for each type
-        Map<Byte, Vec3> firstBlockPos = new HashMap<>();
+
+        // Percorrer todos os voxels do Chunk.
         for (int x = 0; x < SIZE; x++) {
             for (int y = 0; y < SIZE; y++) {
                 for (int z = 0; z < SIZE; z++) {
+
                     byte id = vox[x][y][z];
+
                     if (id == VoxelPalette.AIR_ID) continue;
                     if (!palette.get(id).isSolid()) continue;
-                    MeshBuilder builder = builders.get(id);
+
+                    EnumMap<MeshBuilder.Face, MeshBuilder> faceBuilders =
+                            builders.get(id);
+
                     int wx = chunkX * SIZE + x;
                     int wy = chunkY * SIZE + y;
                     int wz = chunkZ * SIZE + z;
-                    // Only add faces if neighbor is air or out of bounds
-                    if (!isSolid(wx+1,wy,wz,palette)) builder.addVoxelFace(wx,wy,wz, MeshBuilder.Face.PX);
-                    if (!isSolid(wx-1,wy,wz,palette)) builder.addVoxelFace(wx,wy,wz, MeshBuilder.Face.NX);
-                    if (!isSolid(wx,wy+1,wz,palette)) builder.addVoxelFace(wx,wy,wz, MeshBuilder.Face.PY);
-                    if (!isSolid(wx,wy-1,wz,palette)) builder.addVoxelFace(wx,wy,wz, MeshBuilder.Face.NY);
-                    if (!isSolid(wx,wy,wz+1,palette)) builder.addVoxelFace(wx,wy,wz, MeshBuilder.Face.PZ);
-                    if (!isSolid(wx,wy,wz-1,palette)) builder.addVoxelFace(wx,wy,wz, MeshBuilder.Face.NZ);
-                    if (!firstBlockPos.containsKey(id)) firstBlockPos.put(id, new Vec3(wx, wy, wz));
+
+                    // Face direita
+                    if (!isSolid(wx + 1, wy, wz, palette)) {
+                        faceBuilders.get(MeshBuilder.Face.PX)
+                                .addVoxelFace(wx, wy, wz, MeshBuilder.Face.PX);
+                    }
+
+                    // Face esquerda
+                    if (!isSolid(wx - 1, wy, wz, palette)) {
+                        faceBuilders.get(MeshBuilder.Face.NX)
+                                .addVoxelFace(wx, wy, wz, MeshBuilder.Face.NX);
+                    }
+
+                    // Face superior
+                    if (!isSolid(wx, wy + 1, wz, palette)) {
+                        faceBuilders.get(MeshBuilder.Face.PY)
+                                .addVoxelFace(wx, wy, wz, MeshBuilder.Face.PY);
+                    }
+
+                    // Face inferior
+                    if (!isSolid(wx, wy - 1, wz, palette)) {
+                        faceBuilders.get(MeshBuilder.Face.NY)
+                                .addVoxelFace(wx, wy, wz, MeshBuilder.Face.NY);
+                    }
+
+                    // Face frontal
+                    if (!isSolid(wx, wy, wz + 1, palette)) {
+                        faceBuilders.get(MeshBuilder.Face.PZ)
+                                .addVoxelFace(wx, wy, wz, MeshBuilder.Face.PZ);
+                    }
+
+                    // Face traseira
+                    if (!isSolid(wx, wy, wz - 1, palette)) {
+                        faceBuilders.get(MeshBuilder.Face.NZ)
+                                .addVoxelFace(wx, wy, wz, MeshBuilder.Face.NZ);
+                    }
                 }
             }
         }
+
         int geomCount = 0;
-        for (Map.Entry<Byte, MeshBuilder> entry : builders.entrySet()) {
-            MeshBuilder meshBuilder = entry.getValue();
-            Mesh mesh = meshBuilder.build();
-            if (mesh.getTriangleCount() > 0) {
-                byte id = entry.getKey();
-                Geometry g = new Geometry("chunk_"+chunkX+"_"+chunkY+"_"+chunkZ+"_"+id, mesh);
-                Vec3 blockPos = firstBlockPos.getOrDefault(id, new Vec3(chunkX*SIZE, chunkY*SIZE, chunkZ*SIZE));
-                Material mat = palette.get(id).getMaterial(assetManager, blockPos);
-                g.setMaterial(mat);
-                node.attachChild(g);
-                geomCount++;
+
+        // Construir uma Geometry por tipo de bloco e por face.
+        for (Map.Entry<Byte, EnumMap<MeshBuilder.Face, MeshBuilder>> entry
+                : builders.entrySet()) {
+
+            byte id = entry.getKey();
+
+            for (Map.Entry<MeshBuilder.Face, MeshBuilder> faceEntry
+                    : entry.getValue().entrySet()) {
+
+                MeshBuilder.Face face = faceEntry.getKey();
+
+                Mesh mesh = faceEntry.getValue().build();
+
+                if (mesh.getTriangleCount() > 0) {
+
+                    Geometry g = new Geometry(
+                            "chunk_" + chunkX + "_" + chunkY + "_" + chunkZ
+                                    + "_" + id + "_" + face,
+                            mesh
+                    );
+
+                    Material mat = palette.get(id).getMaterial(assetManager, face);
+
+                    g.setMaterial(mat);
+
+                    node.attachChild(g);
+
+                    geomCount++;
+                }
             }
         }
+
         long end = System.nanoTime();
-        System.out.println("Chunk ["+chunkX+","+chunkY+","+chunkZ+"] mesh built in " + ((end-start)/1_000_000.0) + " ms, geometries: " + geomCount);
+
+        System.out.println(
+                "Chunk [" + chunkX + "," + chunkY + "," + chunkZ
+                        + "] mesh built in "
+                        + ((end - start) / 1_000_000.0)
+                        + " ms, geometries: " + geomCount
+        );
     }
+
 
     /**
      * Updates the physics control for this chunk. Call after mesh rebuild.
@@ -117,8 +199,7 @@ public class Chunk {
             // Clone meshes for collision shape to avoid Bullet caching issues
             Node tempNode = node.clone(false); // shallow clone
             for (int i = 0; i < node.getQuantity(); i++) {
-                if (node.getChild(i) instanceof Geometry) {
-                    Geometry g = (Geometry) node.getChild(i);
+                if (node.getChild(i) instanceof Geometry g) {
                     Geometry gClone = g.clone(false);
                     gClone.setMesh(g.getMesh().deepClone());
                     tempNode.attachChild(gClone);
