@@ -91,6 +91,10 @@ public class RenderAppState extends BaseAppState {
             Geometry g = new Geometry(obj.getName(), new Box(0.3f, 0.3f, 0.3f));
             g.setMaterial(colored(ColorRGBA.Yellow));
             return g;
+        } else if (obj instanceof jogo.gameobject.character.Character) {
+            Geometry g = new Geometry(obj.getName(), new Cylinder(16, 16, 0.35f, 1.4f, true));
+            g.setMaterial(colored(ColorRGBA.Red));
+            return g;
         }
         return null;
     }

@@ -12,7 +12,9 @@ import jogo.appstate.WorldAppState;
 import jogo.appstate.HudAppState;
 import jogo.appstate.RenderAppState;
 import jogo.appstate.InteractionAppState;
+import jogo.appstate.GameLogicAppState;
 import jogo.engine.GameRegistry;
+import jogo.gameobject.character.NpcTeste;
 import jogo.engine.RenderIndex;
 
 /**
@@ -41,6 +43,9 @@ public class Jogo extends SimpleApplication {
     }
 
     private BulletAppState bulletAppState;
+    private WorldAppState world;
+    private GameRegistry registry;
+    private boolean npcCriado = false;
 
     @Override
     public void simpleInitApp() {
@@ -59,13 +64,14 @@ public class Jogo extends SimpleApplication {
         InputAppState input = new InputAppState();
         stateManager.attach(input);
 
-        WorldAppState world = new WorldAppState(rootNode, assetManager, physicsSpace, cam, input);
+        world = new WorldAppState(rootNode, assetManager, physicsSpace, cam, input);
         stateManager.attach(world);
 
         // Engine registry and render layers
-        GameRegistry registry = new GameRegistry();
+        registry = new GameRegistry();
         RenderIndex renderIndex = new RenderIndex();
         stateManager.attach(new RenderAppState(rootNode, assetManager, registry, renderIndex));
+        stateManager.attach(new GameLogicAppState(registry));
         stateManager.attach(new InteractionAppState(rootNode, cam, input, renderIndex, world));
 
         // Demo objects
@@ -92,5 +98,17 @@ public class Jogo extends SimpleApplication {
 
         // HUD (just a crosshair for now)
         stateManager.attach(new HudAppState(guiNode, assetManager));
+    }
+
+    @Override
+    public void simpleUpdate(float tpf) {
+        // Só no 1.º frame: o mundo já foi construído e o spawn já é o verdadeiro
+        if (!npcCriado) {
+            NpcTeste npc = new NpcTeste();
+            var spawn = world.getRecommendedSpawnPosition();
+            npc.setPosition(spawn.x + 3, spawn.y - 2, spawn.z);
+            registry.add(npc);
+            npcCriado = true;
+        }
     }
 }

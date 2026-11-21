@@ -1,4 +1,4 @@
-# Plano de Realização do Projeto
+   # Plano de Realização do Projeto
 
 **Prazo final:** domingo, 20 de dezembro de 2026 · **Início:** segunda, 16 de novembro · **5 semanas**
 

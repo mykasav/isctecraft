@@ -102,9 +102,15 @@ public class VoxelWorld {
 
     //TODO this is where you'll generate your world
     public void generateLayers() {
-        //generate a SINGLE block under the player:
-        Vector3i pos = new Vector3i(getRecommendedSpawn());
-        setBlock(pos.x, pos.y, pos.z, VoxelPalette.STONE_ID);
+        //generate a 50x50 flat plane centred on the world (for testing):
+        int size = 50;
+        int startX = sizeX / 2 - size / 2;
+        int startZ = sizeZ / 2 - size / 2;
+        for (int x = startX; x < startX + size; x++) {
+            for (int z = startZ; z < startZ + size; z++) {
+                setBlock(x, groundHeight, z, VoxelPalette.STONE_ID);
+            }
+        }
     }
 
     public int getTopSolidY(int x, int z) {
