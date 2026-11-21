@@ -1,4 +1,3 @@
-
 package jogo.voxel.blocks;
 
 import com.jme3.asset.AssetManager;
@@ -10,18 +9,24 @@ import com.jme3.texture.Texture2D;
 import com.jme3.texture.image.ColorSpace;
 import com.jme3.texture.image.ImageRaster;
 
+import jogo.framework.math.Vec3;
 import jogo.util.ProcTextures;
 import jogo.voxel.MeshBuilder;
 import jogo.voxel.VoxelBlockType;
 
 import java.nio.ByteBuffer;
 
+/**
+ * Bloco de relva: verde em cima, terra em baixo e uma faixa de relva no topo das laterais.
+ * É o primeiro bloco com um material diferente por face.
+ */
 public class GrassBlockType extends VoxelBlockType {
 
     private Texture2D topTexture;
     private Texture2D sideTexture;
     private Texture2D bottomTexture;
 
+    /** Cria o tipo de bloco relva. */
     public GrassBlockType() {
         super("grass");
     }
@@ -119,6 +124,7 @@ public class GrassBlockType extends VoxelBlockType {
         return material;
     }
 
+    /** Material por omissão (lateral), usado quando a face não é conhecida. */
     @Override
     public Material getMaterial(AssetManager assetManager) {
 
@@ -129,10 +135,12 @@ public class GrassBlockType extends VoxelBlockType {
         return createMaterial(assetManager, sideTexture);
     }
 
+    /** Topo verde, base de terra, laterais com faixa de relva. */
     @Override
     public Material getMaterial(
             AssetManager assetManager,
-            MeshBuilder.Face face
+            MeshBuilder.Face face,
+            Vec3 blockPos
     ) {
 
         if (topTexture == null) {
@@ -144,5 +152,11 @@ public class GrassBlockType extends VoxelBlockType {
             case NY -> createMaterial(assetManager, bottomTexture);
             default -> createMaterial(assetManager, sideTexture);
         };
+    }
+
+    /** A faixa de relva tem de ficar sempre no topo da lateral, por isso o UV não é aleatório. */
+    @Override
+    public boolean hasRandomizedUV() {
+        return false;
     }
 }

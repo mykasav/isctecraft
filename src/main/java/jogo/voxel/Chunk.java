@@ -9,6 +9,7 @@ import com.jme3.material.Material;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Mesh;
 import com.jme3.scene.Node;
+import jogo.framework.math.Vec3;
 
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -38,7 +39,9 @@ public class Chunk {
     public Node getNode() { return node; }
     public byte get(int x, int y, int z) { return vox[x][y][z]; }
     public void set(int x, int y, int z, byte id) { vox[x][y][z] = id; }
-
+    public int getChunkX() { return chunkX; }
+    public int getChunkY() { return chunkY; }
+    public int getChunkZ() { return chunkZ; }
 
     public void markDirty() { dirty = true; }
     public boolean isDirty() { return dirty; }
@@ -61,6 +64,7 @@ public class Chunk {
             if (i == VoxelPalette.AIR_ID) continue;
 
             byte id = (byte) i;
+            VoxelBlockType type = palette.get(id);
 
             EnumMap<MeshBuilder.Face, MeshBuilder> faceBuilders =
                     new EnumMap<>(MeshBuilder.Face.class);
@@ -69,16 +73,17 @@ public class Chunk {
 
                 MeshBuilder mb = new MeshBuilder();
 
-                // Randomize UVs apenas para o Dirt.
-                if (id == VoxelPalette.DIRT_ID) {
-                    mb.setRandomizeUV(true);
-                }
+                // Cada tipo de bloco decide se quer UV aleatório (ver VoxelBlockType.hasRandomizedUV).
+                mb.setRandomizeUV(type.hasRandomizedUV());
 
                 faceBuilders.put(face, mb);
             }
 
             builders.put(id, faceBuilders);
         }
+
+        // Posição do primeiro bloco de cada tipo (para materiais que dependem da posição)
+        Map<Byte, Vec3> firstBlockPos = new HashMap<>();
 
         // Percorrer todos os voxels do Chunk.
         for (int x = 0; x < SIZE; x++) {
@@ -132,6 +137,8 @@ public class Chunk {
                         faceBuilders.get(MeshBuilder.Face.NZ)
                                 .addVoxelFace(wx, wy, wz, MeshBuilder.Face.NZ);
                     }
+
+                    if (!firstBlockPos.containsKey(id)) firstBlockPos.put(id, new Vec3(wx, wy, wz));
                 }
             }
         }
@@ -159,7 +166,9 @@ public class Chunk {
                             mesh
                     );
 
-                    Material mat = palette.get(id).getMaterial(assetManager, face);
+                    Vec3 blockPos = firstBlockPos.getOrDefault(id,
+                            new Vec3(chunkX * SIZE, chunkY * SIZE, chunkZ * SIZE));
+                    Material mat = palette.get(id).getMaterial(assetManager, face, blockPos);
 
                     g.setMaterial(mat);
 

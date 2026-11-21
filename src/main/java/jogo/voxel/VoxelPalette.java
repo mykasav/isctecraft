@@ -3,7 +3,7 @@ package jogo.voxel;
 import jogo.voxel.blocks.AirBlockType;
 import jogo.voxel.blocks.StoneBlockType;
 import jogo.voxel.blocks.DirtBlockType;
-import jogo.voxel.blocks.GrassBlockType ;
+import jogo.voxel.blocks.GrassBlockType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +14,7 @@ public class VoxelPalette {
     public byte register(VoxelBlockType type) {
         types.add(type);
         int id = types.size() - 1;
-        if (id > 255) throw new IllegalStateException ("Too many voxel block types (>255)");
+        if (id > 255) throw new IllegalStateException("Too many voxel block types (>255)");
         return (byte) id;
     }
 
@@ -29,9 +29,9 @@ public class VoxelPalette {
     public static VoxelPalette defaultPalette() {
         VoxelPalette p = new VoxelPalette();
         p.register(new AirBlockType());   // id 0
-        p.register(new StoneBlockType());
-        p.register(new DirtBlockType());
-        p.register(new GrassBlockType());// id 1
+        p.register(new StoneBlockType()); // id 1
+        p.register(new DirtBlockType());  // id 2
+        p.register(new GrassBlockType()); // id 3
         return p;
     }
 

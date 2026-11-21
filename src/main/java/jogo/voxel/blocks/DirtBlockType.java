@@ -1,4 +1,3 @@
-
 package jogo.voxel.blocks;
 
 import com.jme3.asset.AssetManager;
@@ -8,12 +7,17 @@ import com.jme3.texture.Texture2D;
 import jogo.util.ProcTextures;
 import jogo.voxel.VoxelBlockType;
 
+/**
+ * Bloco de terra: textura castanha com manchas aleatórias.
+ */
 public class DirtBlockType extends VoxelBlockType {
 
+    /** Cria o tipo de bloco terra. */
     public DirtBlockType() {
         super("dirt");
     }
 
+    /** Material castanho com variação de tons. */
     @Override
     public Material getMaterial(AssetManager assetManager) {
 
@@ -41,4 +45,3 @@ public class DirtBlockType extends VoxelBlockType {
         return m;
     }
 }
-
