@@ -102,13 +102,13 @@ public class VoxelWorld {
 
     //TODO this is where you'll generate your world
     public void generateLayers() {
-        //generate a 50x50 flat plane centred on the world (for testing):
+        //generate a 50x50 flat plane of grass centred on the world (for testing):
         int size = 50;
         int startX = sizeX / 2 - size / 2;
         int startZ = sizeZ / 2 - size / 2;
         for (int x = startX; x < startX + size; x++) {
             for (int z = startZ; z < startZ + size; z++) {
-                setBlock(x, groundHeight, z, VoxelPalette.STONE_ID);
+                setBlock(x, groundHeight, z, VoxelPalette.GRASS_ID);
             }
         }
     }
