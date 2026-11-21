@@ -2,6 +2,8 @@ package jogo.voxel;
 
 import jogo.voxel.blocks.AirBlockType;
 import jogo.voxel.blocks.StoneBlockType;
+import jogo.voxel.blocks.DirtBlockType;
+import jogo.voxel.blocks.GrassBlockType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,9 +30,14 @@ public class VoxelPalette {
         VoxelPalette p = new VoxelPalette();
         p.register(new AirBlockType());   // id 0
         p.register(new StoneBlockType()); // id 1
+        p.register(new DirtBlockType());  // id 2
+        p.register(new GrassBlockType()); // id 3
         return p;
     }
 
     public static final byte AIR_ID = 0;
     public static final byte STONE_ID = 1;
+    public static final byte DIRT_ID = 2;
+    public static final byte GRASS_ID = 3;
+
 }
