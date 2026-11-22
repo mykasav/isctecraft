@@ -15,6 +15,9 @@ import jogo.appstate.InteractionAppState;
 import jogo.appstate.GameLogicAppState;
 import jogo.engine.GameRegistry;
 import jogo.gameobject.character.NpcTeste;
+import jogo.gameobject.item.HealthPotion;
+import jogo.gameobject.item.StoneItem;
+import jogo.gameobject.item.WoodItem;
 import jogo.engine.RenderIndex;
 
 /**
@@ -104,10 +107,25 @@ public class Jogo extends SimpleApplication {
     public void simpleUpdate(float tpf) {
         // Só no 1.º frame: o mundo já foi construído e o spawn já é o verdadeiro
         if (!npcCriado) {
-            NpcTeste npc = new NpcTeste();
             var spawn = world.getRecommendedSpawnPosition();
+
+            NpcTeste npc = new NpcTeste();
             npc.setPosition(spawn.x + 3, spawn.y - 2, spawn.z);
             registry.add(npc);
+
+            // Itens de teste (Miguel - Semana 1)
+            HealthPotion potion = new HealthPotion(50);
+            potion.setPosition(spawn.x + 1, spawn.y - 2, spawn.z + 1);
+            registry.add(potion);
+
+            WoodItem wood = new WoodItem(5);
+            wood.setPosition(spawn.x - 1, spawn.y - 2, spawn.z + 1);
+            registry.add(wood);
+
+            StoneItem stone = new StoneItem(10);
+            stone.setPosition(spawn.x, spawn.y - 2, spawn.z + 2);
+            registry.add(stone);
+
             npcCriado = true;
         }
     }
