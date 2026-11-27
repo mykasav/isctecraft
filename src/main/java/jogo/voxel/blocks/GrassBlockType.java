@@ -16,6 +16,11 @@ import jogo.voxel.VoxelBlockType;
 
 import java.nio.ByteBuffer;
 
+/**
+ * Representa um bloco de relva com texturas específicas
+ * para as faces superior, laterais e inferior.
+ */
+
 public class GrassBlockType extends VoxelBlockType {
 
     private Texture2D topTexture;
@@ -26,28 +31,16 @@ public class GrassBlockType extends VoxelBlockType {
         super("grass");
     }
 
+
     private void createTextures() {
 
-        // Textura superior: diferentes tons de verde.
-        topTexture = ProcTextures.randomBlocks(
-                128, 128, 8, 100,
-                new ColorRGBA(0.20f, 0.48f, 0.12f, 1f),
-                new ColorRGBA(0.27f, 0.58f, 0.16f, 1f),
-                new ColorRGBA(0.16f, 0.40f, 0.09f, 1f)
-        );
-
-        // Textura inferior: diferentes tons de castanho.
-        bottomTexture = ProcTextures.randomBlocks(
-                128, 128, 8, 42,
-                new ColorRGBA(0.38f, 0.22f, 0.11f, 1f),
-                new ColorRGBA(0.29f, 0.16f, 0.08f, 1f),
-                new ColorRGBA(0.45f, 0.28f, 0.15f, 1f)
-        );
-
-        // Textura lateral: relva na parte superior e terra na restante.
         int size = 128;
 
-        Image image = new Image(
+        // ==========================================
+        // TEXTURA SUPERIOR: RELVA COM MANCHAS DE TERRA
+        // ==========================================
+
+        Image topImage = new Image(
                 Image.Format.RGBA8,
                 size,
                 size,
@@ -55,45 +48,104 @@ public class GrassBlockType extends VoxelBlockType {
                 ColorSpace.Linear
         );
 
-        ImageRaster raster = ImageRaster.create(image);
+        ImageRaster topRaster = ImageRaster.create(topImage);
 
-        ColorRGBA[] grassColors = {
-                new ColorRGBA(0.20f, 0.48f, 0.12f, 1f),
-                new ColorRGBA(0.27f, 0.58f, 0.16f, 1f),
-                new ColorRGBA(0.16f, 0.40f, 0.09f, 1f)
-        };
-
-        ColorRGBA[] dirtColors = {
-                new ColorRGBA(0.38f, 0.22f, 0.11f, 1f),
-                new ColorRGBA(0.29f, 0.16f, 0.08f, 1f),
-                new ColorRGBA(0.45f, 0.28f, 0.15f, 1f)
-        };
+        ColorRGBA grass = new ColorRGBA(0.25f, 0.48f, 0.14f, 1f);
+        ColorRGBA grassLight = new ColorRGBA(0.34f, 0.57f, 0.19f, 1f);
+        ColorRGBA dirt = new ColorRGBA(0.40f, 0.25f, 0.13f, 1f);
 
         for (int y = 0; y < size; y++) {
             for (int x = 0; x < size; x++) {
 
-                int hash = (x / 8 * 73856093)
-                        ^ (y / 8 * 19349663);
+                int hash = (x / 8 * 73856093) ^ (y / 8 * 19349663);
+                int detail = Math.floorMod(hash, 10);
 
-                int index = Math.floorMod(hash, 3);
+                ColorRGBA color = grass;
 
-                ColorRGBA color;
-
-                if (y >= size - 16) {
-                    color = grassColors[index];
-                } else {
-                    color = dirtColors[index];
+                if (detail == 0) {
+                    color = dirt;
+                } else if (detail <= 2) {
+                    color = grassLight;
                 }
 
-                raster.setPixel(x, y, color);
+                topRaster.setPixel(x, y, color);
             }
         }
 
-        sideTexture = new Texture2D(image);
+        topTexture = new Texture2D(topImage);
+        topTexture.setMagFilter(Texture.MagFilter.Nearest);
+        topTexture.setMinFilter(Texture.MinFilter.NearestNoMipMaps);
+        topTexture.setWrap(Texture.WrapMode.Repeat);
+
+
+        // ==========================================
+        // TEXTURA INFERIOR: TERRA
+        // ==========================================
+
+        bottomTexture = ProcTextures.randomBlocks(
+                128, 128, 8, 42,
+                new ColorRGBA(0.38f, 0.22f, 0.11f, 1f),
+                new ColorRGBA(0.29f, 0.16f, 0.08f, 1f),
+                new ColorRGBA(0.45f, 0.28f, 0.15f, 1f)
+        );
+
+
+        // ==========================================
+        // TEXTURA LATERAL: RELVA + TERRA
+        // ==========================================
+
+        Image sideImage = new Image(
+                Image.Format.RGBA8,
+                size,
+                size,
+                ByteBuffer.allocateDirect(size * size * 4),
+                ColorSpace.Linear
+        );
+
+        ImageRaster sideRaster = ImageRaster.create(sideImage);
+
+        ColorRGBA grassDark = new ColorRGBA(0.20f, 0.39f, 0.10f, 1f);
+        ColorRGBA grassSideLight = new ColorRGBA(0.32f, 0.53f, 0.16f, 1f);
+        ColorRGBA dirtBase = new ColorRGBA(0.40f, 0.25f, 0.13f, 1f);
+        ColorRGBA dirtDark = new ColorRGBA(0.32f, 0.19f, 0.10f, 1f);
+        ColorRGBA dirtLight = new ColorRGBA(0.46f, 0.30f, 0.17f, 1f);
+
+        for (int y = 0; y < size; y++) {
+            for (int x = 0; x < size; x++) {
+
+                int hash = (x / 8 * 73856093) ^ (y / 8 * 19349663);
+                int detail = Math.floorMod(hash, 12);
+
+                int grassLine = 108 + Math.floorMod(x / 8 * 7, 9);
+
+                ColorRGBA color;
+
+                if (y >= grassLine) {
+                    color = grassDark;
+
+                    if (detail < 4) {
+                        color = grassSideLight;
+                    }
+                } else {
+                    color = dirtBase;
+
+                    if (detail == 0) {
+                        color = dirtDark;
+                    } else if (detail <= 2) {
+                        color = dirtLight;
+                    }
+                }
+
+                sideRaster.setPixel(x, y, color);
+            }
+        }
+
+        sideTexture = new Texture2D(sideImage);
         sideTexture.setMagFilter(Texture.MagFilter.Nearest);
         sideTexture.setMinFilter(Texture.MinFilter.NearestNoMipMaps);
         sideTexture.setWrap(Texture.WrapMode.Repeat);
     }
+
 
     private Material createMaterial(
             AssetManager assetManager,

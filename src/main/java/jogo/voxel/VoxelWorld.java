@@ -1,5 +1,6 @@
 package jogo.voxel;
 
+import java.util.Random;
 import com.jme3.asset.AssetManager;
 import com.jme3.bullet.PhysicsSpace;
 import com.jme3.material.Material;
@@ -11,6 +12,8 @@ import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.texture.Texture2D;
 import jogo.util.ProcTextures;
+import java.util.ArrayList;
+import java.util.List;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,6 +32,14 @@ public class VoxelWorld {
     private boolean wireframe = false; // Wireframe: Off by default
     private boolean culling = true;   // Culling: On by default
     private int groundHeight = 8; // baseline Y level
+    private int waterDirection = 0;
+    private final Map<Long, Integer> waterDistances = new HashMap<>();
+
+    private static final int MAX_WATER_SPREAD = 5;
+
+    private long getWaterKey(int x, int y, int z) {
+        return ((long) x * sizeY + y) * sizeZ + z;
+    }
 
     // Chunked world data
     private final int chunkSize = Chunk.SIZE;
@@ -73,9 +84,17 @@ public class VoxelWorld {
         return c.get(lx(x), ly(y), lz(z));
     }
     public void setBlock(int x, int y, int z, byte id) {
+        byte previousId = getBlock(x, y, z);
         Chunk c = getChunk(x, y, z);
         if (c != null) {
             c.set(lx(x), ly(y), lz(z), id);
+
+            if (id == VoxelPalette.WATER_ID && previousId != VoxelPalette.WATER_ID) {
+                waterDistances.put(getWaterKey(x, y, z), 0);
+            } else if (id != VoxelPalette.WATER_ID) {
+                waterDistances.remove(getWaterKey(x, y, z));
+            }
+
             c.markDirty();
             // If on chunk edge, mark neighbor dirty
             if (lx(x) == 0) markNeighborChunkDirty(x-1, y, z);
@@ -102,10 +121,115 @@ public class VoxelWorld {
 
     //TODO this is where you'll generate your world
     public void generateLayers() {
-        //generate a SINGLE block under the player:
-        Vector3i pos = new Vector3i(getRecommendedSpawn());
-        setBlock(pos.x, pos.y, pos.z, VoxelPalette.GRASS_ID);
+
+        int size = 50;
+
+        int startX = sizeX / 2 - size / 2;
+        int startZ = sizeZ / 2 - size / 2;
+
+        // Gerar plataforma de relva
+        for (int x = startX; x < startX + size; x++) {
+            for (int z = startZ; z < startZ + size; z++) {
+                setBlock(x, groundHeight, z, VoxelPalette.GRASS_ID);
+            }
+        }
+
+        setBlock(
+                sizeX / 2 + 5,
+                groundHeight + 1,
+                sizeZ / 2,
+                VoxelPalette.WATER_ID
+        );
+
+        // Gerar árvores
+        Random random = new Random(42);
+
+        for (int i = 0; i < 12; i++) {
+
+            int x = startX + 3 + random.nextInt(size - 6);
+            int z = startZ + 3 + random.nextInt(size - 6);
+
+            int treeHeight = 4 + random.nextInt(2);
+
+            generateTree(x, groundHeight, z, treeHeight);
+        }
     }
+
+    private void generateTree(int x, int groundY, int z, int height) {
+
+        // Gerar tronco
+        for (int y = 1; y <= height; y++) {
+            setBlock(
+                    x,
+                    groundY + y,
+                    z,
+                    VoxelPalette.WOOD_ID
+            );
+        }
+
+        int crownY = groundY + height;
+
+        // Gerar copa
+        for (int dy = -1; dy <= 2; dy++) {
+
+            int radius;
+
+            if (dy == 2) {
+                radius = 0;
+            } else if (dy == 1 || dy == -1) {
+                radius = 1;
+            } else {
+                radius = 2;
+            }
+
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+
+                    // Não substituir o tronco por folhas
+                    if (dx == 0 && dz == 0 && dy <= 0) {
+                        continue;
+                    }
+
+                    setBlock(
+                            x + dx,
+                            crownY + dy,
+                            z + dz,
+                            VoxelPalette.LEAVES_ID
+                    );
+                }
+            }
+        }
+    }
+
+
+    public void updateSandPhysics() {
+
+        for (int x = 0; x < sizeX; x++) {
+            for (int z = 0; z < sizeZ; z++) {
+                for (int y = 1; y < sizeY; y++) {
+
+                    // Verificar se existe areia nesta posição
+                    if (getBlock(x, y, z) == VoxelPalette.SAND_ID) {
+
+                        // Verificar se o bloco inferior é ar
+                        if (getBlock(x, y - 1, z) == VoxelPalette.AIR_ID) {
+
+                            // Retirar areia da posição atual
+                            setBlock(x, y, z, VoxelPalette.AIR_ID);
+
+                            // Colocar areia uma posição abaixo
+                            setBlock(x, y - 1, z, VoxelPalette.SAND_ID);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+
+
+
 
     public int getTopSolidY(int x, int z) {
         if (x < 0 || z < 0 || x >= sizeX || z >= sizeZ) return -1;
@@ -151,7 +275,7 @@ public class VoxelWorld {
             for (int cy = 0; cy < chunkCountY; cy++) {
                 for (int cz = 0; cz < chunkCountZ; cz++) {
                     Chunk chunk = chunks[cx][cy][cz];
-                    chunk.buildMesh(assetManager, palette);
+                    chunk.buildMesh(assetManager, palette, this);
                     node.attachChild(chunk.getNode());
                 }
             }
@@ -170,6 +294,90 @@ public class VoxelWorld {
             }
         }
     }
+
+
+    public void updateWaterPhysics() {
+
+        List<Vector3i> waterBlocks = new ArrayList<>();
+
+        for (int x = 0; x < sizeX; x++) {
+            for (int y = 0; y < sizeY; y++) {
+                for (int z = 0; z < sizeZ; z++) {
+
+                    if (getBlock(x, y, z) == VoxelPalette.WATER_ID) {
+                        waterBlocks.add(new Vector3i(x, y, z));
+                    }
+                }
+            }
+        }
+
+        int[][] directions = {
+                {1, 0},
+                {0, 1},
+                {-1, 0},
+                {0, -1}
+        };
+
+        for (Vector3i position : waterBlocks) {
+
+            int x = position.x;
+            int y = position.y;
+            int z = position.z;
+
+            if (getBlock(x, y, z) != VoxelPalette.WATER_ID) {
+                continue;
+            }
+
+            long key = getWaterKey(x, y, z);
+            int distance = waterDistances.getOrDefault(key, 0);
+
+            // Prioridade 1: descer verticalmente.
+            if (y > 0 && getBlock(x, y - 1, z) == VoxelPalette.AIR_ID) {
+
+                setBlock(x, y - 1, z, VoxelPalette.WATER_ID);
+
+                waterDistances.put(
+                        getWaterKey(x, y - 1, z),
+                        distance
+                );
+
+                continue;
+            }
+
+            // Não permitir propagação horizontal para além do limite.
+            if (distance >= MAX_WATER_SPREAD) {
+                continue;
+            }
+
+            // Prioridade 2: propagação horizontal.
+            for (int i = 0; i < 4; i++) {
+
+                int directionIndex = (waterDirection + i) % 4;
+
+                int nx = x + directions[directionIndex][0];
+                int nz = z + directions[directionIndex][1];
+
+                if (nx < 0 || nx >= sizeX || nz < 0 || nz >= sizeZ) {
+                    continue;
+                }
+
+                if (getBlock(nx, y, nz) == VoxelPalette.AIR_ID) {
+
+                    setBlock(nx, y, nz, VoxelPalette.WATER_ID);
+
+                    waterDistances.put(
+                            getWaterKey(nx, y, nz),
+                            distance + 1
+                    );
+
+                    break;
+                }
+            }
+        }
+
+        waterDirection = (waterDirection + 1) % 4;
+    }
+
 
     public Optional<Vector3i> pickFirstSolid(Camera cam, float maxDistance) {
         // DDA grid traversal
@@ -216,8 +424,11 @@ public class VoxelWorld {
         return Optional.empty();
     }
 
-    private boolean isSolid(int x, int y, int z) {
-        if (!inBounds(x,y,z)) return false;
+    public boolean isSolid(int x, int y, int z) {
+        if (!inBounds(x, y, z)) {
+            return false;
+        }
+
         return palette.get(getBlock(x, y, z)).isSolid();
     }
 
@@ -292,7 +503,7 @@ public class VoxelWorld {
                     Chunk chunk = chunks[cx][cy][cz];
                     if (chunk.isDirty()) {
                         System.out.println("Rebuilding chunk: " + cx + "," + cy + "," + cz);
-                        chunk.buildMesh(assetManager, palette);
+                        chunk.buildMesh(assetManager, palette, this);
                         chunk.updatePhysics(physicsSpace);
                         chunk.clearDirty();
                         rebuilt++;
@@ -327,5 +538,9 @@ public class VoxelWorld {
             this.y = (int) vec3f.y;
             this.z = (int) vec3f.z;
         }
+    }
+
+    public boolean isVisible() {
+        return true;
     }
 }

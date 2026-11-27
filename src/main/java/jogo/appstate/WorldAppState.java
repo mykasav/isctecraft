@@ -21,11 +21,14 @@ public class WorldAppState extends BaseAppState {
     private final Camera cam;
     private final InputAppState input;
     private PlayerAppState playerAppState;
+    private float sandUpdateTimer = 0f;
+    private static final float SAND_UPDATE_INTERVAL = 0.2f;
 
     // world root for easy cleanup
     private Node worldNode;
     private VoxelWorld voxelWorld;
     private com.jme3.math.Vector3f spawnPosition;
+    private float waterTimer = 0f;
 
     public WorldAppState(Node rootNode, AssetManager assetManager, PhysicsSpace physicsSpace, Camera cam, InputAppState input) {
         this.rootNode = rootNode;
@@ -74,6 +77,7 @@ public class WorldAppState extends BaseAppState {
         return voxelWorld;
     }
 
+
     @Override
     public void update(float tpf) {
         if (input != null && input.isMouseCaptured() && input.consumeBreakRequested()) {
@@ -87,6 +91,28 @@ public class WorldAppState extends BaseAppState {
         }
         if (input != null && input.consumeToggleShadingRequested()) {
             voxelWorld.toggleRenderDebug();
+        }
+
+        sandUpdateTimer += tpf;
+
+        if (sandUpdateTimer >= SAND_UPDATE_INTERVAL) {
+            sandUpdateTimer = 0f;
+
+            voxelWorld.updateSandPhysics();
+            voxelWorld.rebuildDirtyChunks(physicsSpace);
+            playerAppState.refreshPhysics();
+        }
+
+
+
+        waterTimer += tpf;
+
+        if (waterTimer >= 0.35f) {
+
+            voxelWorld.rebuildDirtyChunks(physicsSpace);
+            voxelWorld.updateWaterPhysics();
+
+            waterTimer = 0f;
         }
     }
 

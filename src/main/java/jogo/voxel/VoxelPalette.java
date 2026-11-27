@@ -3,7 +3,12 @@ package jogo.voxel;
 import jogo.voxel.blocks.AirBlockType;
 import jogo.voxel.blocks.StoneBlockType;
 import jogo.voxel.blocks.DirtBlockType;
-import jogo.voxel.blocks.GrassBlockType ;
+import jogo.voxel.blocks.GrassBlockType;
+import jogo.voxel.blocks.WoodBlockType;
+import jogo.voxel.blocks.LeavesBlockType;
+import jogo.voxel.blocks.SandBlockType;
+import jogo.voxel.blocks.IceBlockType;
+import jogo.voxel.blocks.WaterBlockType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +37,11 @@ public class VoxelPalette {
         p.register(new StoneBlockType());
         p.register(new DirtBlockType());
         p.register(new GrassBlockType());// id 1
+        p.register(new WoodBlockType()); // id 4
+        p.register(new LeavesBlockType());
+        p.register(new SandBlockType());
+        p.register(new IceBlockType());
+        p.register(new WaterBlockType());
         return p;
     }
 
@@ -39,5 +49,10 @@ public class VoxelPalette {
     public static final byte STONE_ID = 1;
     public static final byte DIRT_ID = 2;
     public static final byte GRASS_ID = 3;
+    public static final byte WOOD_ID = 4;
+    public static final byte LEAVES_ID = 5;
+    public static final byte SAND_ID = 6;
+    public static final byte ICE_ID = 7;
+    public static final byte WATER_ID = 8;
 
 }

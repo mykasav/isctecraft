@@ -7,6 +7,10 @@ import jogo.framework.math.Vec3;
 
 public abstract class VoxelBlockType {
 
+    public boolean isVisible() {
+        return true;
+    }
+
     private final String name;
 
     protected VoxelBlockType(String name) {
@@ -23,13 +27,30 @@ public abstract class VoxelBlockType {
 
     public abstract Material getMaterial(AssetManager assetManager);
 
-    // Método original: permite obter o material com base na posição.
+    // Material baseado na posição do bloco.
     public Material getMaterial(AssetManager assetManager, Vec3 blockPos) {
         return getMaterial(assetManager);
     }
 
-    // Novo método: permite obter o material com base na face.
-    public Material getMaterial(AssetManager assetManager, MeshBuilder.Face face) {
+    // Material baseado na face do bloco.
+    public Material getMaterial(
+            AssetManager assetManager,
+            MeshBuilder.Face face
+    ) {
         return getMaterial(assetManager);
     }
+
+    // Material baseado na face e na posição.
+    public Material getMaterial(
+            AssetManager assetManager,
+            MeshBuilder.Face face,
+            Vec3 blockPos
+    ) {
+        return getMaterial(assetManager, face);
+    }
+
+    public boolean hasRandomizedUV() {
+        return true;
+    }
 }
+

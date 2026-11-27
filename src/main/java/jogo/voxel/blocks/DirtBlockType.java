@@ -8,6 +8,10 @@ import com.jme3.texture.Texture2D;
 import jogo.util.ProcTextures;
 import jogo.voxel.VoxelBlockType;
 
+/**
+ * Representa um bloco de terra com texturas específicas.
+ */
+
 public class DirtBlockType extends VoxelBlockType {
 
     public DirtBlockType() {

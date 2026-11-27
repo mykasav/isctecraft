@@ -12,6 +12,7 @@ import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
 import com.jme3.scene.Node;
 import jogo.gameobject.character.Player;
+import jogo.voxel.VoxelPalette;
 
 public class PlayerAppState extends BaseAppState {
 
@@ -22,9 +23,11 @@ public class PlayerAppState extends BaseAppState {
     private final PhysicsSpace physicsSpace;
     private final WorldAppState world;
 
+
     private Node playerNode;
     private BetterCharacterControl characterControl;
     private Player player;
+    private Vector3f horizontalVelocity = new Vector3f(Vector3f.ZERO);
 
     // view angles
     private float yaw = 0f;
@@ -47,6 +50,25 @@ public class PlayerAppState extends BaseAppState {
         this.physicsSpace = physicsSpace;
         this.world = world;
         world.registerPlayerAppState(this);
+    }
+
+    private boolean isStandingOnIce() {
+        if (world == null || world.getVoxelWorld() == null) {
+            return false;
+        }
+
+        Vector3f position = playerNode.getWorldTranslation();
+
+        int blockX = (int) FastMath.floor(position.x);
+        int blockY = (int) FastMath.floor(position.y - 0.95f);
+        int blockZ = (int) FastMath.floor(position.z);
+
+        if (blockX < 0 || blockY < 0 || blockZ < 0) {
+            return false;
+        }
+
+        return world.getVoxelWorld().getBlock(blockX, blockY, blockZ)
+                == VoxelPalette.ICE_ID;
     }
 
     @Override
@@ -111,14 +133,27 @@ public class PlayerAppState extends BaseAppState {
             pitch = FastMath.clamp(pitch, -FastMath.HALF_PI * 0.99f, FastMath.HALF_PI * 0.99f);
         }
 
-        // movement input in XZ plane based on camera yaw
         Vector3f wish = input.getMovementXZ();
         Vector3f dir = Vector3f.ZERO;
+
         if (wish.lengthSquared() > 0f) {
             dir = computeWorldMove(wish).normalizeLocal();
         }
+
         float speed = moveSpeed * (input.isSprinting() ? sprintMultiplier : 1f);
-        characterControl.setWalkDirection(dir.mult(speed));
+
+        Vector3f targetVelocity = dir.mult(speed);
+
+        if (isStandingOnIce()) {
+            // No gelo, a velocidade muda gradualmente.
+            float interpolation = FastMath.clamp(tpf * 2.5f, 0f, 1f);
+            horizontalVelocity.interpolateLocal(targetVelocity, interpolation);
+        } else {
+            // No terreno normal, mantém-se o comportamento habitual.
+            horizontalVelocity.set(targetVelocity);
+        }
+
+        characterControl.setWalkDirection(horizontalVelocity);
 
         // jump
         if (input.consumeJumpRequested() && characterControl.isOnGround()) {
@@ -139,6 +174,7 @@ public class PlayerAppState extends BaseAppState {
         this.yaw = 0f;
         this.pitch = -1.4f;
         applyViewToCamera();
+        horizontalVelocity.set(Vector3f.ZERO);
     }
 
     private Vector3f computeWorldMove(Vector3f inputXZ) {
